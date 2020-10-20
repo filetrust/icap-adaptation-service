@@ -17,16 +17,18 @@ import (
 )
 
 type PodArgs struct {
-	PodNamespace string
-	Client       *kubernetes.Clientset
-	FileID       string
-	Input        string
-	Output       string
-	InputMount   string
-	OutputMount  string
+	PodNamespace  string
+	Client        *kubernetes.Clientset
+	FileID        string
+	Input         string
+	Output        string
+	InputMount    string
+	OutputMount   string
+	ReplyTo       string
+	CorrelationId string
 }
 
-func NewPodArgs(fileId, input, output, podNamespace, inputMount, outputMount string)(*PodArgs, error){
+func NewPodArgs(fileId, input, output, podNamespace, inputMount, outputMount, replyTo, correlationId string)(*PodArgs, error){
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, err
@@ -38,14 +40,17 @@ func NewPodArgs(fileId, input, output, podNamespace, inputMount, outputMount str
 	}
 
 	podArgs := &PodArgs{
-		PodNamespace: podNamespace,
-		Client:	      client,
-		FileID:       fileId,
-		Input:        input,
-		Output:       output,
-		InputMount:   inputMount,
+		PodNamespace:  podNamespace,
+		Client:	       client,
+		FileID:        fileId,
+		Input:         input,
+		Output:        output,
+		InputMount:    inputMount,
 		OutputMount:   outputMount,
+		ReplyTo:       replyTo,
+		CorrelationId: correlationId,
 	}
+	
 	return podArgs, nil
 }
 
@@ -118,9 +123,11 @@ func (pa PodArgs) GetPodObject() *core.Pod {
 					Image:           "glasswallsolutions/icap-request-processing",
 					ImagePullPolicy: core.PullIfNotPresent,
 					Env: []core.EnvVar{
-						{Name: "FILE_ID", Value: pa.FileID},
-						{Name: "INPUT_PATH", Value: pa.Input},
-						{Name: "OUTPUT_PATH", Value: pa.Output},
+						{Name: "FileId", Value: pa.FileID},
+						{Name: "InputPath", Value: pa.Input},
+						{Name: "OutputPath", Value: pa.Output},
+						{Name: "ReplyTo", Value: pa.ReplyTo},
+						{Name: "CorrelationId", Value: pa.CorrelationId},
 					},
 					VolumeMounts: []core.VolumeMount{
 						{Name: "sourcedir", MountPath: pa.InputMount},
