@@ -25,10 +25,9 @@ type PodArgs struct {
 	InputMount    string
 	OutputMount   string
 	ReplyTo       string
-	CorrelationId string
 }
 
-func NewPodArgs(fileId, input, output, podNamespace, inputMount, outputMount, replyTo, correlationId string)(*PodArgs, error){
+func NewPodArgs(fileId, input, output, podNamespace, inputMount, outputMount, replyTo string)(*PodArgs, error){
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, err
@@ -48,7 +47,6 @@ func NewPodArgs(fileId, input, output, podNamespace, inputMount, outputMount, re
 		InputMount:    inputMount,
 		OutputMount:   outputMount,
 		ReplyTo:       replyTo,
-		CorrelationId: correlationId,
 	}
 	
 	return podArgs, nil
@@ -127,7 +125,6 @@ func (pa PodArgs) GetPodObject() *core.Pod {
 						{Name: "InputPath", Value: pa.Input},
 						{Name: "OutputPath", Value: pa.Output},
 						{Name: "ReplyTo", Value: pa.ReplyTo},
-						{Name: "CorrelationId", Value: pa.CorrelationId},
 					},
 					VolumeMounts: []core.VolumeMount{
 						{Name: "sourcedir", MountPath: pa.InputMount},

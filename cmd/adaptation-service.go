@@ -60,7 +60,7 @@ func main() {
 			input := body["source-file-location"].(string)
 			output := body["rebuilt-file-location"].(string)
 
-			podArgs, err := pod.NewPodArgs(fileID, input, output, podNamespace, inputMount, outputMount, d.ReplyTo, d.CorrelationId)
+			podArgs, err := pod.NewPodArgs(fileID, input, output, podNamespace, inputMount, outputMount, d.ReplyTo)
 			if err != nil {
 				ch.Nack(d.DeliveryTag, false, true)
 				log.Printf("Failed to initialize Pod, placing message back on queue. Error: %s", err)
