@@ -26,6 +26,8 @@ spec:
           value: {{ .Values.deployment.inputmount }}
         - name: OUTPUT_MOUNT
           value: {{ .Values.deployment.outputmount }}
+          - name: POD_IMAGE
+          value: {{ .Values.deployment.image }}          
         resources:
           limits:
             cpu: 1

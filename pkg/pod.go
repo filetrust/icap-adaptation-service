@@ -1,7 +1,7 @@
 package pod
 
 import (
-	"context" 
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -18,6 +18,7 @@ import (
 
 type PodArgs struct {
 	PodNamespace string
+	PodImage     string
 	Client       *kubernetes.Clientset
 	FileID       string
 	Input        string
@@ -27,7 +28,7 @@ type PodArgs struct {
 	ReplyTo      string
 }
 
-func NewPodArgs(fileId, input, output, podNamespace, inputMount, outputMount, replyTo string)(*PodArgs, error){
+func NewPodArgs(fileId, input, output, podNamespace, podImage, inputMount, outputMount, replyTo string) (*PodArgs, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, err
@@ -40,7 +41,8 @@ func NewPodArgs(fileId, input, output, podNamespace, inputMount, outputMount, re
 
 	podArgs := &PodArgs{
 		PodNamespace: podNamespace,
-		Client:	      client,
+		PodImage:     podImage,
+		Client:       client,
 		FileID:       fileId,
 		Input:        input,
 		Output:       output,
@@ -56,15 +58,15 @@ func (pa PodArgs) CreatePod() error {
 
 	var pod *core.Pod = nil
 
-	err := try.Do(func(attempt int) (bool, error){
+	err := try.Do(func(attempt int) (bool, error) {
 		var err error
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		
-		pod, err = pa.Client.CoreV1().Pods(pa.PodNamespace).Create(ctx, podSpec, metav1.CreateOptions{}) 
 
-		if err != nil  && attempt < 5{
+		pod, err = pa.Client.CoreV1().Pods(pa.PodNamespace).Create(ctx, podSpec, metav1.CreateOptions{})
+
+		if err != nil && attempt < 5 {
 			time.Sleep((time.Duration(attempt) * 5) * time.Second) // exponential 5 second wait
 		}
 
@@ -117,7 +119,7 @@ func (pa PodArgs) GetPodObject() *core.Pod {
 			Containers: []core.Container{
 				{
 					Name:            "rebuild",
-					Image:           "glasswallsolutions/icap-request-processing:main-54b2be5",
+					Image:           pa.PodImage,
 					ImagePullPolicy: core.PullIfNotPresent,
 					Env: []core.EnvVar{
 						{Name: "FileId", Value: pa.FileID},
@@ -131,7 +133,7 @@ func (pa PodArgs) GetPodObject() *core.Pod {
 					},
 					Resources: core.ResourceRequirements{
 						Limits: core.ResourceList{
-							core.ResourceCPU: resource.MustParse("1"),
+							core.ResourceCPU:    resource.MustParse("1"),
 							core.ResourceMemory: resource.MustParse("1Gi"),
 						},
 					},

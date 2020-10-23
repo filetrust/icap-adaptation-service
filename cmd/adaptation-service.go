@@ -43,14 +43,15 @@ var (
 	)
 
 	podNamespace = os.Getenv("POD_NAMESPACE")
+	podImage     = os.Getenv("POD_IMAGE")
 	amqpURL      = os.Getenv("AMQP_URL")
 	inputMount   = os.Getenv("INPUT_MOUNT")
 	outputMount  = os.Getenv("OUTPUT_MOUNT")
 )
 
 func main() {
-	if podNamespace == "" || amqpURL == "" || inputMount == "" || outputMount == "" {
-		log.Fatalf("init failed: POD_NAMESPACE, AMQP_URL, INPUT_MOUNT or OUTPUT_MOUNT environment variables not set")
+	if podNamespace == "" || podImage == "" || amqpURL == "" || inputMount == "" || outputMount == "" {
+		log.Fatalf("init failed: POD_NAMESPACE, POD_IMAGE, AMQP_URL, INPUT_MOUNT or OUTPUT_MOUNT environment variables not set")
 	}
 
 	conn, err := amqp.Dial(amqpURL)
@@ -113,7 +114,7 @@ func processMessage(d amqp.Delivery) (bool, error) {
 	input := body["source-file-location"].(string)
 	output := body["rebuilt-file-location"].(string)
 
-	podArgs, err := pod.NewPodArgs(fileID, input, output, podNamespace, inputMount, outputMount, d.ReplyTo)
+	podArgs, err := pod.NewPodArgs(fileID, input, output, podNamespace, podImage, inputMount, outputMount, d.ReplyTo)
 	if err != nil {
 		msgTotal.WithLabelValues(k8sclient).Inc()
 		return true, fmt.Errorf("Failed to initialize Pod: %v", err)
