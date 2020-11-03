@@ -106,6 +106,16 @@ func (pa PodArgs) GetPodObject() *core.Pod {
 						},
 					},
 				},
+				{
+					Name: "request-processing-config",
+					VolumeSource: core.VolumeSource{
+						ConfigMap: &core.ConfigMapVolumeSource{
+							LocalObjectReference: core.LocalObjectReference{
+								Name: "request-processing-config",
+							},
+						},
+					},
+				},
 			},
 			Containers: []core.Container{
 				{
@@ -121,15 +131,12 @@ func (pa PodArgs) GetPodObject() *core.Pod {
 					VolumeMounts: []core.VolumeMount{
 						{Name: "sourcedir", MountPath: pa.InputMount},
 						{Name: "targetdir", MountPath: pa.OutputMount},
+						{Name: "request-processing-config", MountPath: "/app/config"},
 					},
 					Resources: core.ResourceRequirements{
 						Limits: core.ResourceList{
 							core.ResourceCPU: resource.MustParse("1"),
 							core.ResourceMemory: resource.MustParse("1Gi"),
-						},
-						Requests: core.ResourceList{
-							core.ResourceCPU: resource.MustParse("0.5"),
-							core.ResourceMemory: resource.MustParse("250Mi"),
 						},
 					},
 				},
