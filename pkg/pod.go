@@ -36,6 +36,10 @@ type PodArgs struct {
 	TransactionEventQueuePort             string
 	MessageBrokerUser                     string
 	MessageBrokerPassword                 string
+	CPULimit                              string
+	CPURequest                            string
+	MemoryLimit                           string
+	MemoryRequest                         string
 }
 
 func (podArgs *PodArgs) GetClient() error {
@@ -155,12 +159,12 @@ func (pa PodArgs) GetPodObject() *core.Pod {
 					},
 					Resources: core.ResourceRequirements{
 						Limits: core.ResourceList{
-							core.ResourceCPU:    resource.MustParse("1"),
-							core.ResourceMemory: resource.MustParse("10000Mi"),
+							core.ResourceCPU:    resource.MustParse(pa.CPULimit),
+							core.ResourceMemory: resource.MustParse(pa.MemoryLimit),
 						},
 						Requests: core.ResourceList{
-							core.ResourceCPU:    resource.MustParse("0.2"),
-							core.ResourceMemory: resource.MustParse("250Mi"),
+							core.ResourceCPU:    resource.MustParse(pa.CPURequest),
+							core.ResourceMemory: resource.MustParse(pa.MemoryRequest),
 						},
 					},
 				},
