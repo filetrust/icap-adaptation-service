@@ -56,6 +56,10 @@ var (
 	transactionEventQueuePort             = os.Getenv("TRANSACTION_EVENT_QUEUE_PORT")
 	messagebrokeruser                     = os.Getenv("MESSAGE_BROKER_USER")
 	messagebrokerpassword                 = os.Getenv("MESSAGE_BROKER_PASSWORD")
+	cpuLimit                              = os.Getenv("CPU_LIMIT")
+	cpuRequest                            = os.Getenv("CPU_REQUEST")
+	memoryLimit                           = os.Getenv("MEMORY_LIMIT")
+	memoryRequest                         = os.Getenv("MEMORY_REQUEST")
 )
 
 func main() {
@@ -69,6 +73,10 @@ func main() {
 
 	if adaptationRequestQueuePort == "" || archiveAdaptationRequestQueuePort == "" || transactionEventQueuePort == "" {
 		log.Fatalf("init failed: ADAPTATION_REQUEST_QUEUE_PORT, ARCHIVE_ADAPTATION_REQUEST_QUEUE_PORT or TRANSACTION_EVENT_QUEUE_PORT environment variables not set")
+	}
+
+	if cpuLimit == "" || cpuRequest == "" || memoryLimit == "" || memoryRequest == "" {
+		log.Fatalf("init failed: CPU_LIMIT, CPU_REQUEST, MEMORY_LIMIT or MEMORY_REQUEST environment variables not set")
 	}
 
 	if messagebrokeruser == "" {
@@ -170,6 +178,10 @@ func processMessage(d amqp.Delivery) (bool, error) {
 		TransactionEventQueuePort:             transactionEventQueuePort,
 		MessageBrokerUser:                     messagebrokeruser,
 		MessageBrokerPassword:                 messagebrokerpassword,
+		CPULimit:                              cpuLimit,
+		CPURequest:                            cpuRequest,
+		MemoryLimit:                           memoryLimit,
+		MemoryRequest:                         memoryRequest,
 	}
 
 	err := podArgs.GetClient()
