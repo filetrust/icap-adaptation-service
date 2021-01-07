@@ -6,10 +6,12 @@ import (
 	"os"
 	"time"
 
+	"net/http"
 	"net/url"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	pod "github.com/icap-adaptation-service/pkg"
 	"github.com/streadway/amqp"
@@ -44,6 +46,7 @@ var (
 	)
 
 	podNamespace                          = os.Getenv("POD_NAMESPACE")
+	metricsPort                           = os.Getenv("METRICS_PORT")
 	inputMount                            = os.Getenv("INPUT_MOUNT")
 	outputMount                           = os.Getenv("OUTPUT_MOUNT")
 	requestProcessingImage                = os.Getenv("REQUEST_PROCESSING_IMAGE")
@@ -63,8 +66,8 @@ var (
 )
 
 func main() {
-	if podNamespace == "" || inputMount == "" || outputMount == "" {
-		log.Fatalf("init failed: POD_NAMESPACE, INPUT_MOUNT or OUTPUT_MOUNT environment variables not set")
+	if podNamespace == "" || metricsPort == "" || inputMount == "" || outputMount == "" {
+		log.Fatalf("init failed: POD_NAMESPACE, METRICS_PORT, INPUT_MOUNT or OUTPUT_MOUNT environment variables not set")
 	}
 
 	if adaptationRequestQueueHostname == "" || archiveAdaptationRequestQueueHostname == "" || transactionEventQueueHostname == "" {
@@ -125,6 +128,11 @@ func main() {
 				ch.Nack(d.DeliveryTag, false, requeue)
 			}
 		}
+	}()
+
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		http.ListenAndServe(fmt.Sprintf(":%v", metricsPort), nil)
 	}()
 
 	log.Printf("[*] Waiting for messages. To exit press CTRL+C")
