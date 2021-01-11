@@ -40,6 +40,7 @@ type PodArgs struct {
 	CPURequest                            string
 	MemoryLimit                           string
 	MemoryRequest                         string
+	PushGatewayEndpoint                   string
 }
 
 func (podArgs *PodArgs) GetClient() error {
@@ -151,6 +152,7 @@ func (pa PodArgs) GetPodObject() *core.Pod {
 						{Name: "TransactionEventQueuePort", Value: pa.TransactionEventQueuePort},
 						{Name: "MessageBrokerUser", Value: pa.MessageBrokerUser},
 						{Name: "MessageBrokerPassword", Value: pa.MessageBrokerPassword},
+						{Name: "MetricsEndpoint", Value: pa.PushGatewayEndpoint},
 					},
 					VolumeMounts: []core.VolumeMount{
 						{Name: "sourcedir", MountPath: pa.InputMount},

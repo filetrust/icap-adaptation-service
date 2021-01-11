@@ -47,6 +47,7 @@ var (
 
 	podNamespace                          = os.Getenv("POD_NAMESPACE")
 	metricsPort                           = os.Getenv("METRICS_PORT")
+	pushgatewayEndpoint                   = os.Getenv("PUSHGATEWAY_ENDPOINT")
 	inputMount                            = os.Getenv("INPUT_MOUNT")
 	outputMount                           = os.Getenv("OUTPUT_MOUNT")
 	requestProcessingImage                = os.Getenv("REQUEST_PROCESSING_IMAGE")
@@ -66,8 +67,8 @@ var (
 )
 
 func main() {
-	if podNamespace == "" || metricsPort == "" || inputMount == "" || outputMount == "" {
-		log.Fatalf("init failed: POD_NAMESPACE, METRICS_PORT, INPUT_MOUNT or OUTPUT_MOUNT environment variables not set")
+	if podNamespace == "" || metricsPort == "" || pushgatewayEndpoint == "" || inputMount == "" || outputMount == "" {
+		log.Fatalf("init failed: POD_NAMESPACE, METRICS_PORT, PUSHGATEWAY_ENDPOINT, INPUT_MOUNT or OUTPUT_MOUNT environment variables not set")
 	}
 
 	if adaptationRequestQueueHostname == "" || archiveAdaptationRequestQueueHostname == "" || transactionEventQueueHostname == "" {
@@ -190,6 +191,7 @@ func processMessage(d amqp.Delivery) (bool, error) {
 		CPURequest:                            cpuRequest,
 		MemoryLimit:                           memoryLimit,
 		MemoryRequest:                         memoryRequest,
+		PushGatewayEndpoint:                   pushgatewayEndpoint,
 	}
 
 	err := podArgs.GetClient()
