@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	pod "github.com/icap-adaptation-service/pkg"
+	"github.com/icap-adaptation-service/pkg/comms"
 	"github.com/streadway/amqp"
 )
 
@@ -91,45 +92,34 @@ func main() {
 		messagebrokerpassword = "guest"
 	}
 
-	amqpUrl := url.URL{
+	amqpURL := url.URL{
 		Scheme: "amqp",
 		User:   url.UserPassword(messagebrokeruser, messagebrokerpassword),
 		Host:   fmt.Sprintf("%s:%s", adaptationRequestQueueHostname, adaptationRequestQueuePort),
 		Path:   "/",
 	}
-	fmt.Println("Connecting to ", amqpUrl.Host)
-
-	conn, err := amqp.Dial(amqpUrl.String())
-	failOnError(err, fmt.Sprintf("Failed to connect to %s", amqpUrl.Host))
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
-
-	err = ch.ExchangeDeclare(exchange, "direct", true, false, false, false, nil)
-	failOnError(err, "Failed to declare an exchange")
-
-	q, err := ch.QueueDeclare(queueName, false, false, false, false, nil)
-	failOnError(err, "Failed to declare a queue")
-
-	err = ch.QueueBind(q.Name, routingKey, exchange, false, nil)
-	failOnError(err, "Failed to bind queue")
-
-	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
-	failOnError(err, "Failed to register a consumer")
 
 	forever := make(chan bool)
 
-	go func() {
-		for d := range msgs {
-			requeue, err := processMessage(d)
-			if err != nil {
-				log.Printf("Failed to process message: %v", err)
-				ch.Nack(d.DeliveryTag, false, requeue)
-			}
-		}
-	}()
+	fmt.Println("Connecting to ", amqpURL.Host)
+
+	conn := comms.NewConnection("icap-adaptation-consumer", exchange, routingKey, []string{queueName}, amqpURL)
+	if err := conn.Connect(); err != nil {
+		failOnError(err, "Failed to connect to RabbitMQ")
+	}
+
+	if err := conn.BindQueue(); err != nil {
+		failOnError(err, "Failed to bind queue")
+	}
+
+	deliveries, err := conn.Consume()
+	if err != nil {
+		failOnError(err, "Failed to register a consumer")
+	}
+
+	for q, d := range deliveries {
+		go conn.HandleConsumedDeliveries(q, d, messageHandler)
+	}
 
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
@@ -143,6 +133,16 @@ func main() {
 func failOnError(err error, msg string) {
 	if err != nil {
 		log.Fatalf("%s: %s", msg, err)
+	}
+}
+
+func messageHandler(c comms.Connection, q string, deliveries <-chan amqp.Delivery) {
+	for d := range deliveries {
+		requeue, err := processMessage(d)
+		if err != nil {
+			log.Printf("Failed to process message: %v", err)
+			d.Nack(false, requeue)
+		}
 	}
 }
 
